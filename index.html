@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <!-- Regola fondamentale per il mobile: impedisce lo zoom indesiderato quando tocchi gli input -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GymTracker</title>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --primary: #bb86fc;
+      --primary-hover: #9965f4;
+      --text-main: #e0e0e0;
+      --text-muted: #a0a0a0;
+      --border: #333333;
+      --danger: #cf6679;
+    }
+
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, Roboto, sans-serif; }
+    
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      margin: 0;
+      padding: 16px;
+      padding-bottom: 40px;
+    }
+
+    h1 { font-size: 1.5rem; margin-top: 0; color: var(--primary); text-align: center; }
+
+    .card {
+      background-color: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      margin-bottom: 20px;
+    }
+
+    .form-group { margin-bottom: 16px; }
+    
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Input ottimizzati per il touch */
+    input {
+      width: 100%;
+      padding: 14px;
+      background-color: var(--bg-color);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus { border-color: var(--primary); }
+
+    .row {
+      display: flex;
+      gap: 12px;
+    }
+    .row > .form-group { flex: 1; }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      /* Ottimizzazione touch */
+      touch-action: manipulation; 
+    }
+
+    .btn-save { background-color: var(--primary); color: #000; margin-top: 8px; }
+    .btn-save:active { background-color: var(--primary-hover); }
+
+    .btn-export { background-color: transparent; color: var(--text-main); border: 1px solid var(--border); margin-top: 10px; }
+    .btn-export:active { background-color: var(--border); }
+
+    /* Sezione Log */
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .log-header h2 { font-size: 1.2rem; margin: 0; }
+    
+    .btn-clear {
+      background: none; border: none; color: var(--danger);
+      padding: 8px; width: auto; font-size: 0.85rem;
+    }
+
+    .log-item {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .log-item:last-child { border-bottom: none; }
+    .log-ex { font-weight: bold; font-size: 1.1rem; }
+    .log-metrics { color: var(--primary); font-family: monospace; font-size: 1.1rem; }
+    .log-meta { font-size: 0.8rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <h1>GymTracker</h1>
+
+  <div class="card">
+    <div class="form-group">
+      <label>Data</label>
+      <input type="date" id="dateInput">
+    </div>
+
+    <div class="form-group">
+      <label>Esercizio</label>
+      <!-- Il datalist ti permette di avere suggerimenti, ma puoi scrivere quello che vuoi -->
+      <input type="text" id="exerciseInput" placeholder="es. Panca Piana" list="exercises-list" autocapitalize="words">
+      <datalist id="exercises-list">
+        <option value="Squat">
+        <option value="Panca Piana">
+        <option value="Stacco da Terra">
+        <option value="Trazioni">
+        <option value="Military Press">
+      </datalist>
+    </div>
+
+    <div class="row">
+      <div class="form-group">
+        <label>Peso (Kg)</label>
+        <!-- inputmode="decimal" apre la tastiera numerica con la virgola su Android -->
+        <input type="number" id="weightInput" step="0.5" inputmode="decimal" placeholder="0.0">
+      </div>
+      <div class="form-group">
+        <label>Reps</label>
+        <input type="number" id="repsInput" inputmode="numeric" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>RIR</label>
+        <input type="number" id="rirInput" step="0.5" inputmode="decimal" placeholder="0">
+      </div>
+    </div>
+
+    <button class="btn-save" onclick="saveSet()">+ Salva Serie</button>
+  </div>
+
+  <div class="card">
+    <div class="log-header">
+      <h2>Ultime Serie</h2>
+      <button class="btn-clear" onclick="clearData()">Svuota Dati</button>
+    </div>
+    <div id="logContainer">
+      <!-- Le serie appariranno qui -->
+    </div>
+  </div>
+
+  <button class="btn-export" onclick="exportData('csv')">Esporta Dati (CSV)</button>
+  <button class="btn-export" onclick="exportData('json')">Esporta Dati (JSON)</button>
+
+  <script>
+    // Inizializza la data a oggi
+    document.getElementById('dateInput').valueAsDate = new Date();
+
+    // Funzione per recuperare i dati dal LocalStorage (il database del browser)
+    function getLogs() {
+      return JSON.parse(localStorage.getItem('gymData') || '[]');
+    }
+
+    // Salva una nuova serie
+    function saveSet() {
+      const date = document.getElementById('dateInput').value;
+      const exercise = document.getElementById('exerciseInput').value.trim();
+      const weight = parseFloat(document.getElementById('weightInput').value);
+      const reps = parseInt(document.getElementById('repsInput').value);
+      const rir = parseFloat(document.getElementById('rirInput').value);
+
+      // Validazione base
+      if (!exercise || isNaN(reps)) {
+        alert('Inserisci almeno Esercizio e Ripetizioni.');
+        return;
+      }
+
+      const newSet = {
+        id: Date.now(), // ID univoco basato sul timestamp
+        date: date,
+        exercise: exercise,
+        weight_kg: isNaN(weight) ? 0 : weight,
+        reps: reps,
+        rir: isNaN(rir) ? 0 : rir
+      };
+
+      const logs = getLogs();
+      logs.push(newSet);
+      localStorage.setItem('gymData', JSON.stringify(logs));
+
+      // Resetta solo i campi numerici, tenendo l'esercizio per la serie successiva
+      document.getElementById('weightInput').value = '';
+      document.getElementById('repsInput').value = '';
+      document.getElementById('rirInput').value = '';
+      
+      // Rimette il focus sulle reps (comodo su mobile)
+      document.getElementById('weightInput').focus();
+
+      renderLogs();
+    }
+
+    // Mostra a schermo le ultime serie inserite
+    function renderLogs() {
+      const logs = getLogs();
+      const container = document.getElementById('logContainer');
+      
+      if (logs.length === 0) {
+        container.innerHTML = '<div class="log-meta">Nessun dato salvato.</div>';
+        return;
+      }
+
+      // Mostriamo solo le ultime 10 per non appesantire la UI
+      const recentLogs = logs.slice(-10).reverse();
+      
+      container.innerHTML = recentLogs.map(log => `
+        <div class="log-item">
+          <div>
+            <div class="log-ex">${log.exercise}</div>
+            <div class="log-meta">${log.date}</div>
+          </div>
+          <div class="log-metrics">
+            ${log.weight_kg}kg x ${log.reps} <span style="font-size:0.8rem; color:#a0a0a0;">@RIR ${log.rir}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Funzione di esportazione pulita per Data Science
+    function exportData(format) {
+      const logs = getLogs();
+      if (logs.length === 0) {
+        alert("Nessun dato da esportare!");
+        return;
+      }
+
+      let dataToDownload = '';
+      let mimeType = '';
+      let filename = `gym_export_${new Date().toISOString().split('T')[0]}`;
+
+      if (format === 'json') {
+        dataToDownload = JSON.stringify(logs, null, 2);
+        mimeType = 'application/json';
+        filename += '.json';
+      } else if (format === 'csv') {
+        // Genera CSV nativo pronto per pandas (pd.read_csv)
+        const headers = ['id', 'date', 'exercise', 'weight_kg', 'reps', 'rir'];
+        dataToDownload = headers.join(',') + '\n';
+        dataToDownload += logs.map(row => {
+          return `${row.id},${row.date},"${row.exercise}",${row.weight_kg},${row.reps},${row.rir}`;
+        }).join('\n');
+        mimeType = 'text/csv';
+        filename += '.csv';
+      }
+
+      // Crea un file virtuale e scaricalo
+      const blob = new Blob([dataToDownload], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Svuota tutto (con conferma per evitare disastri)
+    function clearData() {
+      if (confirm('Sei sicuro di voler eliminare TUTTI i dati salvati sul telefono? Esportali prima!')) {
+        localStorage.removeItem('gymData');
+        renderLogs();
+      }
+    }
+
+    // Renderizza i log al caricamento della pagina
+    renderLogs();
+  </script>
+</body>
+</html>
