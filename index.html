@@ -2,302 +2,386 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <!-- Regola fondamentale per il mobile: impedisce lo zoom indesiderato quando tocchi gli input -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#121212">
-  <title>GymTracker</title>
+  <title>GymTracker Pro</title>
   <style>
     :root {
-      --bg-color: #121212;
-      --card-bg: #1e1e1e;
-      --primary: #bb86fc;
-      --primary-hover: #9965f4;
-      --text-main: #e0e0e0;
-      --text-muted: #a0a0a0;
-      --border: #333333;
-      --danger: #cf6679;
+      --bg-color: #121212; --card-bg: #1e1e1e; --primary: #bb86fc;
+      --primary-hover: #9965f4; --text-main: #e0e0e0; --text-muted: #a0a0a0;
+      --border: #333333; --danger: #cf6679; --nav-bg: #1a1a1a;
     }
-
-    * { box-sizing: border-box; font-family: system-ui, -apple-system, Roboto, sans-serif; }
+    * { box-sizing: border-box; font-family: system-ui, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 70px; }
     
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      margin: 0;
-      padding: 16px;
-      padding-bottom: 40px;
+    /* Viste e Navigazione */
+    .view { display: none; padding: 16px; }
+    .view.active { display: block; }
+    
+    .nav-bar {
+      position: fixed; bottom: 0; width: 100%; background: var(--nav-bg);
+      display: flex; border-top: 1px solid var(--border);
     }
+    .nav-item {
+      flex: 1; padding: 16px 0; text-align: center; background: none; border: none;
+      color: var(--text-muted); font-size: 0.9rem; font-weight: bold;
+    }
+    .nav-item.active { color: var(--primary); border-top: 2px solid var(--primary); }
 
+    /* UI Components */
     h1 { font-size: 1.5rem; margin-top: 0; color: var(--primary); text-align: center; }
-
-    .card {
-      background-color: var(--card-bg);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-      margin-bottom: 20px;
-    }
-
+    h2 { font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-top: 24px; }
+    .card { background-color: var(--card-bg); padding: 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border); }
     .form-group { margin-bottom: 16px; }
+    label { display: block; margin-bottom: 6px; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; }
     
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    input, select {
+      width: 100%; padding: 12px; background-color: var(--bg-color);
+      border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); font-size: 1rem;
     }
-
-    /* Input ottimizzati per il touch */
-    input {
-      width: 100%;
-      padding: 14px;
-      background-color: var(--bg-color);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-main);
-      font-size: 1rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    input:focus { border-color: var(--primary); }
-
-    .row {
-      display: flex;
-      gap: 12px;
-    }
-    .row > .form-group { flex: 1; }
-
+    input[type="color"] { padding: 4px; height: 46px; }
+    .row { display: flex; gap: 12px; }
+    .row > * { flex: 1; }
+    
     button {
-      width: 100%;
-      padding: 16px;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background-color 0.2s;
-      /* Ottimizzazione touch */
-      touch-action: manipulation; 
+      width: 100%; padding: 14px; border: none; border-radius: 8px;
+      font-size: 1rem; font-weight: bold; cursor: pointer; touch-action: manipulation;
     }
+    .btn-primary { background-color: var(--primary); color: #000; }
+    .btn-secondary { background-color: transparent; color: var(--text-main); border: 1px solid var(--border); }
+    .btn-small { padding: 8px; font-size: 0.9rem; }
+    .btn-danger { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); }
 
-    .btn-save { background-color: var(--primary); color: #000; margin-top: 8px; }
-    .btn-save:active { background-color: var(--primary-hover); }
-
-    .btn-export { background-color: transparent; color: var(--text-main); border: 1px solid var(--border); margin-top: 10px; }
-    .btn-export:active { background-color: var(--border); }
-
-    /* Sezione Log */
-    .log-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
+    /* Liste e Log */
+    .list-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
     }
-
-    .log-header h2 { font-size: 1.2rem; margin: 0; }
+    .tag { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; color: #fff; text-shadow: 0 0 2px rgba(0,0,0,0.8); }
+    .log-details { font-family: monospace; color: var(--primary); font-size: 1.1rem; }
     
-    .btn-clear {
-      background: none; border: none; color: var(--danger);
-      padding: 8px; width: auto; font-size: 0.85rem;
+    /* Modal Edit */
+    #editModal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9); padding: 20px; z-index: 1000;
     }
-
-    .log-item {
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .log-item:last-child { border-bottom: none; }
-    .log-ex { font-weight: bold; font-size: 1.1rem; }
-    .log-metrics { color: var(--primary); font-family: monospace; font-size: 1.1rem; }
-    .log-meta { font-size: 0.8rem; color: var(--text-muted); }
+    #editModal.active { display: block; }
   </style>
 </head>
 <body>
 
-  <h1>GymTracker</h1>
-
-  <div class="card">
-    <div class="form-group">
-      <label>Data</label>
-      <input type="date" id="dateInput">
-    </div>
-
-    <div class="form-group">
-      <label>Esercizio</label>
-      <!-- Il datalist ti permette di avere suggerimenti, ma puoi scrivere quello che vuoi -->
-      <input type="text" id="exerciseInput" placeholder="es. Panca Piana" list="exercises-list" autocapitalize="words">
-      <datalist id="exercises-list">
-        <option value="Squat">
-        <option value="Panca Piana">
-        <option value="Stacco da Terra">
-        <option value="Trazioni">
-        <option value="Military Press">
-      </datalist>
-    </div>
-
-    <div class="row">
+  <!-- VISTA 1: INSERIMENTO -->
+  <div id="view-tracker" class="view active">
+    <h1>Allenamento</h1>
+    <div class="card">
       <div class="form-group">
-        <label>Peso (Kg)</label>
-        <!-- inputmode="decimal" apre la tastiera numerica con la virgola su Android -->
-        <input type="number" id="weightInput" step="0.5" inputmode="decimal" placeholder="0.0">
+        <label>Data</label>
+        <input type="date" id="dateInput">
       </div>
       <div class="form-group">
-        <label>Reps</label>
-        <input type="number" id="repsInput" inputmode="numeric" placeholder="0">
+        <label>Gruppo Muscolare</label>
+        <select id="muscleSelect" onchange="updateExerciseDropdown()"></select>
       </div>
       <div class="form-group">
-        <label>RIR</label>
-        <input type="number" id="rirInput" step="0.5" inputmode="decimal" placeholder="0">
+        <label>Esercizio</label>
+        <select id="exerciseSelect"></select>
       </div>
-    </div>
-
-    <button class="btn-save" onclick="saveSet()">+ Salva Serie</button>
-  </div>
-
-  <div class="card">
-    <div class="log-header">
-      <h2>Ultime Serie</h2>
-      <button class="btn-clear" onclick="clearData()">Svuota Dati</button>
-    </div>
-    <div id="logContainer">
-      <!-- Le serie appariranno qui -->
+      <div class="row">
+        <div class="form-group">
+          <label>Peso (Kg)</label>
+          <input type="number" id="weightInput" step="0.5" inputmode="decimal" placeholder="0.0">
+        </div>
+        <div class="form-group">
+          <label>Reps</label>
+          <input type="number" id="repsInput" inputmode="numeric" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>RIR</label>
+          <input type="number" id="rirInput" step="0.5" inputmode="decimal" placeholder="0">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="saveLog()">+ Salva Serie</button>
     </div>
   </div>
 
-  <button class="btn-export" onclick="exportData('csv')">Esporta Dati (CSV)</button>
-  <button class="btn-export" onclick="exportData('json')">Esporta Dati (JSON)</button>
+  <!-- VISTA 2: CALENDARIO / STORICO -->
+  <div id="view-calendar" class="view">
+    <h1>Calendario Storico</h1>
+    <div class="card">
+      <label>Seleziona Giorno</label>
+      <input type="date" id="calendarDate" onchange="renderCalendar()">
+    </div>
+    <div class="card" id="calendarLogs">
+      <!-- I log del giorno appariranno qui -->
+    </div>
+    <button class="btn-secondary" style="margin-top: 16px;" onclick="exportData('csv')">📥 Esporta Tutto (CSV)</button>
+  </div>
+
+  <!-- VISTA 3: SETUP (DIZIONARIO) -->
+  <div id="view-setup" class="view">
+    <h1>Gestione Setup</h1>
+    
+    <!-- Creazione Muscolo -->
+    <div class="card">
+      <h2>Nuovo Gruppo Muscolare</h2>
+      <div class="row">
+        <div class="form-group" style="flex: 3;">
+          <label>Nome</label>
+          <input type="text" id="newMuscleName" placeholder="es. Petto">
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>Colore</label>
+          <input type="color" id="newMuscleColor" value="#bb86fc">
+        </div>
+      </div>
+      <button class="btn-secondary" onclick="addMuscle()">Aggiungi Muscolo</button>
+      <div id="muscleList" style="margin-top: 16px;"></div>
+    </div>
+
+    <!-- Creazione Esercizio -->
+    <div class="card">
+      <h2>Nuovo Esercizio</h2>
+      <div class="form-group">
+        <label>Gruppo Muscolare</label>
+        <select id="setupMuscleSelect"></select>
+      </div>
+      <div class="form-group">
+        <label>Nome Esercizio</label>
+        <input type="text" id="newExerciseName" placeholder="es. Panca Piana">
+      </div>
+      <button class="btn-secondary" onclick="addExercise()">Aggiungi Esercizio</button>
+      <div id="exerciseList" style="margin-top: 16px;"></div>
+    </div>
+  </div>
+
+  <!-- MODAL MODIFICA LOG -->
+  <div id="editModal">
+    <div class="card">
+      <h2 style="margin-top:0;">Modifica Serie</h2>
+      <input type="hidden" id="editLogId">
+      <div class="row">
+        <div class="form-group">
+          <label>Peso</label><input type="number" id="editWeight" step="0.5">
+        </div>
+        <div class="form-group">
+          <label>Reps</label><input type="number" id="editReps">
+        </div>
+        <div class="form-group">
+          <label>RIR</label><input type="number" id="editRir" step="0.5">
+        </div>
+      </div>
+      <div class="row" style="margin-top:16px;">
+        <button class="btn-primary" onclick="saveEdit()">Salva</button>
+        <button class="btn-secondary" onclick="closeEditModal()">Annulla</button>
+      </div>
+      <button class="btn-danger" style="margin-top: 16px;" onclick="deleteLog()">Elimina Serie</button>
+    </div>
+  </div>
+
+  <!-- NAVIGATION BAR -->
+  <nav class="nav-bar">
+    <button class="nav-item active" onclick="switchTab('tracker', this)">📝 Tracker</button>
+    <button class="nav-item" onclick="switchTab('calendar', this)">📅 Storico</button>
+    <button class="nav-item" onclick="switchTab('setup', this)">⚙️ Setup</button>
+  </nav>
 
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js');
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+
+    // STATO GLOBALE DELL'APP
+    let db = {
+      muscles: JSON.parse(localStorage.getItem('gymMuscles')) || [
+        { id: 'm1', name: 'Petto', color: '#ff5252' },
+        { id: 'm2', name: 'Dorso', color: '#448aff' },
+        { id: 'm3', name: 'Gambe', color: '#69f0ae' }
+      ],
+      exercises: JSON.parse(localStorage.getItem('gymExercises')) || [
+        { id: 'e1', name: 'Panca Piana', muscleId: 'm1' },
+        { id: 'e2', name: 'Trazioni', muscleId: 'm2' },
+        { id: 'e3', name: 'Squat', muscleId: 'm3' }
+      ],
+      logs: JSON.parse(localStorage.getItem('gymData')) || []
+    };
+
+    // Date Iniziali
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('dateInput').value = today;
+    document.getElementById('calendarDate').value = today;
+
+    // CORE FUNZIONI SALVATAGGIO
+    function saveData() {
+      localStorage.setItem('gymMuscles', JSON.stringify(db.muscles));
+      localStorage.setItem('gymExercises', JSON.stringify(db.exercises));
+      localStorage.setItem('gymData', JSON.stringify(db.logs));
     }
-    // Inizializza la data a oggi
-    document.getElementById('dateInput').valueAsDate = new Date();
 
-    // Funzione per recuperare i dati dal LocalStorage (il database del browser)
-    function getLogs() {
-      return JSON.parse(localStorage.getItem('gymData') || '[]');
+    // NAVIGAZIONE
+    function switchTab(tabId, btnContext) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      document.getElementById(`view-${tabId}`).classList.add('active');
+      if(btnContext) btnContext.classList.add('active');
+      
+      if(tabId === 'calendar') renderCalendar();
     }
 
-    // Salva una nuova serie
-    function saveSet() {
-      const date = document.getElementById('dateInput').value;
-      const exercise = document.getElementById('exerciseInput').value.trim();
-      const weight = parseFloat(document.getElementById('weightInput').value);
-      const reps = parseInt(document.getElementById('repsInput').value);
-      const rir = parseFloat(document.getElementById('rirInput').value);
+    // GESTIONE SETUP (Dizionario)
+    function addMuscle() {
+      const name = document.getElementById('newMuscleName').value.trim();
+      const color = document.getElementById('newMuscleColor').value;
+      if(!name) return;
+      db.muscles.push({ id: 'm_'+Date.now(), name, color });
+      saveData();
+      document.getElementById('newMuscleName').value = '';
+      refreshUI();
+    }
 
-      // Validazione base
-      if (!exercise || isNaN(reps)) {
-        alert('Inserisci almeno Esercizio e Ripetizioni.');
-        return;
-      }
+    function addExercise() {
+      const name = document.getElementById('newExerciseName').value.trim();
+      const muscleId = document.getElementById('setupMuscleSelect').value;
+      if(!name || !muscleId) return;
+      db.exercises.push({ id: 'e_'+Date.now(), name, muscleId });
+      saveData();
+      document.getElementById('newExerciseName').value = '';
+      refreshUI();
+    }
 
-      const newSet = {
-        id: Date.now(), // ID univoco basato sul timestamp
-        date: date,
-        exercise: exercise,
-        weight_kg: isNaN(weight) ? 0 : weight,
-        reps: reps,
-        rir: isNaN(rir) ? 0 : rir
+    function refreshUI() {
+      // Popola select dei muscoli (Tracker e Setup)
+      const mSelect = document.getElementById('muscleSelect');
+      const sSelect = document.getElementById('setupMuscleSelect');
+      mSelect.innerHTML = db.muscles.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+      sSelect.innerHTML = mSelect.innerHTML;
+      
+      // Aggiorna liste visuali in Setup
+      document.getElementById('muscleList').innerHTML = db.muscles.map(m => 
+        `<div class="list-item"><span class="tag" style="background:${m.color}">${m.name}</span></div>`
+      ).join('');
+      
+      document.getElementById('exerciseList').innerHTML = db.exercises.map(e => {
+        const m = db.muscles.find(x => x.id === e.muscleId);
+        return `<div class="list-item"><span>${e.name}</span> <span class="tag" style="background:${m?.color||'#777'}">${m?.name||'N/A'}</span></div>`;
+      }).join('');
+
+      updateExerciseDropdown();
+    }
+
+    // LOGICA TRACKER
+    function updateExerciseDropdown() {
+      const selectedMuscle = document.getElementById('muscleSelect').value;
+      const exSelect = document.getElementById('exerciseSelect');
+      const filteredEx = db.exercises.filter(e => e.muscleId === selectedMuscle);
+      exSelect.innerHTML = filteredEx.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+    }
+
+    function saveLog() {
+      const exId = document.getElementById('exerciseSelect').value;
+      if(!exId) return alert("Crea prima un esercizio nel Setup!");
+      
+      // Denormalizzazione: salviamo anche le stringhe per mantenere lo storico intatto
+      // nel caso in cui un esercizio venisse eliminato dal database in futuro.
+      const exObj = db.exercises.find(e => e.id === exId);
+      const mObj = db.muscles.find(m => m.id === exObj.muscleId);
+
+      const log = {
+        id: Date.now(),
+        date: document.getElementById('dateInput').value,
+        muscleId: mObj.id,
+        muscleName: mObj.name,
+        muscleColor: mObj.color,
+        exerciseId: exObj.id,
+        exerciseName: exObj.name,
+        weight_kg: parseFloat(document.getElementById('weightInput').value) || 0,
+        reps: parseInt(document.getElementById('repsInput').value) || 0,
+        rir: parseFloat(document.getElementById('rirInput').value) || 0
       };
 
-      const logs = getLogs();
-      logs.push(newSet);
-      localStorage.setItem('gymData', JSON.stringify(logs));
+      if(log.reps === 0) return alert("Inserisci le ripetizioni");
 
-      // Resetta solo i campi numerici, tenendo l'esercizio per la serie successiva
+      db.logs.push(log);
+      saveData();
+      
       document.getElementById('weightInput').value = '';
       document.getElementById('repsInput').value = '';
       document.getElementById('rirInput').value = '';
-      
-      // Rimette il focus sulle reps (comodo su mobile)
       document.getElementById('weightInput').focus();
-
-      renderLogs();
     }
 
-    // Mostra a schermo le ultime serie inserite
-    function renderLogs() {
-      const logs = getLogs();
-      const container = document.getElementById('logContainer');
-      
-      if (logs.length === 0) {
-        container.innerHTML = '<div class="log-meta">Nessun dato salvato.</div>';
+    // CALENDARIO E STORICO
+    function renderCalendar() {
+      const date = document.getElementById('calendarDate').value;
+      const container = document.getElementById('calendarLogs');
+      const dayLogs = db.logs.filter(l => l.date === date).reverse();
+
+      if(dayLogs.length === 0) {
+        container.innerHTML = '<div class="list-item">Nessun allenamento in questa data.</div>';
         return;
       }
 
-      // Mostriamo solo le ultime 10 per non appesantire la UI
-      const recentLogs = logs.slice(-10).reverse();
-      
-      container.innerHTML = recentLogs.map(log => `
-        <div class="log-item">
+      container.innerHTML = dayLogs.map(l => `
+        <div class="list-item" onclick="openEditModal(${l.id})">
           <div>
-            <div class="log-ex">${log.exercise}</div>
-            <div class="log-meta">${log.date}</div>
+            <div style="font-weight:bold; font-size:1.1rem">${l.exerciseName || l.exercise}</div>
+            <span class="tag" style="background:${l.muscleColor || '#555'}">${l.muscleName || 'Legacy'}</span>
           </div>
-          <div class="log-metrics">
-            ${log.weight_kg}kg x ${log.reps} <span style="font-size:0.8rem; color:#a0a0a0;">@RIR ${log.rir}</span>
-          </div>
+          <div class="log-details">${l.weight_kg}kg x ${l.reps} <br><span style="font-size:0.8rem; color:#a0a0a0">RIR ${l.rir}</span></div>
         </div>
       `).join('');
     }
 
-    // Funzione di esportazione pulita per Data Science
+    // MODAL DI MODIFICA
+    function openEditModal(id) {
+      const log = db.logs.find(l => l.id === id);
+      if(!log) return;
+      document.getElementById('editLogId').value = log.id;
+      document.getElementById('editWeight').value = log.weight_kg;
+      document.getElementById('editReps').value = log.reps;
+      document.getElementById('editRir').value = log.rir;
+      document.getElementById('editModal').classList.add('active');
+    }
+
+    function closeEditModal() { document.getElementById('editModal').classList.remove('active'); }
+
+    function saveEdit() {
+      const id = parseInt(document.getElementById('editLogId').value);
+      const logIndex = db.logs.findIndex(l => l.id === id);
+      if(logIndex > -1) {
+        db.logs[logIndex].weight_kg = parseFloat(document.getElementById('editWeight').value) || 0;
+        db.logs[logIndex].reps = parseInt(document.getElementById('editReps').value) || 0;
+        db.logs[logIndex].rir = parseFloat(document.getElementById('editRir').value) || 0;
+        saveData();
+        renderCalendar();
+        closeEditModal();
+      }
+    }
+
+    function deleteLog() {
+      if(confirm('Eliminare questa serie?')) {
+        const id = parseInt(document.getElementById('editLogId').value);
+        db.logs = db.logs.filter(l => l.id !== id);
+        saveData();
+        renderCalendar();
+        closeEditModal();
+      }
+    }
+
+    // EXPORT
     function exportData(format) {
-      const logs = getLogs();
-      if (logs.length === 0) {
-        alert("Nessun dato da esportare!");
-        return;
-      }
-
-      let dataToDownload = '';
-      let mimeType = '';
-      let filename = `gym_export_${new Date().toISOString().split('T')[0]}`;
-
-      if (format === 'json') {
-        dataToDownload = JSON.stringify(logs, null, 2);
-        mimeType = 'application/json';
-        filename += '.json';
-      } else if (format === 'csv') {
-        // Genera CSV nativo pronto per pandas (pd.read_csv)
-        const headers = ['id', 'date', 'exercise', 'weight_kg', 'reps', 'rir'];
-        dataToDownload = headers.join(',') + '\n';
-        dataToDownload += logs.map(row => {
-          return `${row.id},${row.date},"${row.exercise}",${row.weight_kg},${row.reps},${row.rir}`;
-        }).join('\n');
-        mimeType = 'text/csv';
-        filename += '.csv';
-      }
-
-      // Crea un file virtuale e scaricalo
-      const blob = new Blob([dataToDownload], { type: mimeType });
-      const url = URL.createObjectURL(blob);
+      if(db.logs.length === 0) return alert("Nessun dato!");
+      const headers = ['id', 'date', 'muscle', 'exercise', 'weight_kg', 'reps', 'rir'];
+      let csv = headers.join(',') + '\n';
+      csv += db.logs.map(r => `${r.id},${r.date},"${r.muscleName || 'Legacy'}","${r.exerciseName || r.exercise}",${r.weight_kg},${r.reps},${r.rir}`).join('\n');
+      
+      const blob = new Blob([csv], { type: 'text/csv' });
       const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
+      a.href = URL.createObjectURL(blob);
+      a.download = `gym_data_${today}.csv`;
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     }
 
-    // Svuota tutto (con conferma per evitare disastri)
-    function clearData() {
-      if (confirm('Sei sicuro di voler eliminare TUTTI i dati salvati sul telefono? Esportali prima!')) {
-        localStorage.removeItem('gymData');
-        renderLogs();
-      }
-    }
-
-    // Renderizza i log al caricamento della pagina
-    renderLogs();
+    // Inizializzazione
+    refreshUI();
   </script>
 </body>
 </html>
