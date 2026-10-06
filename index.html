@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <!-- Regola fondamentale per il mobile: impedisce lo zoom indesiderato quando tocchi gli input -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#121212">
   <title>GymTracker</title>
   <style>
     :root {
@@ -172,6 +174,9 @@
   <button class="btn-export" onclick="exportData('json')">Esporta Dati (JSON)</button>
 
   <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
     // Inizializza la data a oggi
     document.getElementById('dateInput').valueAsDate = new Date();
 
